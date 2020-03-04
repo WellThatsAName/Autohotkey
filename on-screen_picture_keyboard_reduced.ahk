@@ -6,6 +6,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 
 ; On-Screen Picture Keyboard Overlay -- by WellThatsAName, inspired by "On-Screen Keyboard"
+; Version 2020-03-04 15-17
 ; https://www.autohotkey.com/docs/scripts/KeyboardOnScreen.htm
 ; This script creates a (partial) keyboard at the bottom of your screen that shows
 ; the keys you are pressing in real time. I made it to help me to learn to
@@ -20,7 +21,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 
 k_KeyHeight = 40  ; Changing this key height size will make the entire on-screen keyboard get larger or smaller
-k_KeyZoom = 1.2  ; Workaround: if replacement keys are too small or too big, specify a zoom factor other than 1.0
+k_KeyZoom = 1.0  ; Workaround: if replacement keys are too small or too big, specify a zoom factor other than 1.0
 
 ; To have the keyboard appear on a monitor other than the primary, specify a number such as 2 for the following variable. 
 ; Leave it blank to use the primary
@@ -37,12 +38,8 @@ k_keyspreset = 1
 ;keys to listen for
 a_keysToWatch := ["1", "2", "3", "4", "5", "Q", "W", "E", "R", "A", "S", "D", "F", "C", "Space", "Tab", "Shift", "Ctrl"]
 
-;a_keysToWatch := ["1", "2", "3", "4", "5", "Q", "W", "E", "R", "T", "Z", "U", "I", "O", "P", "Ü", "A", "S", "D", "F", "G", "H", "J", "K", "L", "Ö", "Ä", "#", "Space", "Enter", "Tab","Backspace", "Shift", "Ctrl", "Alt", "Win"]
-;a_keysToWatch := ["A"]
-
-;chose 1 or 2 as the first color
+;choose 1 or 2 as the first color
 k_keyColorFirst = 2
-k_keyColorSecond := k_keyColorFirst = 1 ? 2 : 1
 
 ; Names for the tray menu items
 k_MenuItemHide = Hide on-screen keyboard overlay
@@ -58,8 +55,8 @@ k_tray_icon = images\icon_keyboard_left.png
 k_keyColorSecond := k_keyColorFirst = 1 ? 2 : 1
 
 for index, element in a_keysToWatch ; Enumeration is the recommended approach in most cases.
-{	
-	; each key has two colors: first color ends with 1, second with 2
+{
+	; each key has two color images. Set paths
 	key_%element%_colorFirst := "images\keys\preset" . k_keyspreset . "\" . element . k_keyColorFirst . ".png"
 	key_%element%_colorSecond := "images\keys\preset" . k_keyspreset . "\" . element . k_keyColorSecond . ".png"
 
@@ -78,7 +75,7 @@ Menu, Tray, Add
 Menu, Tray, Icon, %k_tray_icon%
 
 
-;---- Calculate object dimensions based on chosen font size:
+;---- Calculate object dimensions based on chosen key size
 k_KeyWidth = %k_KeyHeight%
 ;use zoom workaround to prevent small button replacements
 k_KeyWidth2Set := k_KeyWidth * k_KeyZoom
@@ -100,7 +97,7 @@ k_KeySizeAlternative = *w%k_KeyWidth% *h%k_KeyHeight%
 k_Position = x+%k_KeyMargin% %k_KeySize%
 k_PositionAlternative = xm y+%k_KeyMargin% %k_KeySize%
 
-;---- Create a GUI window for the on-screen keyboard:
+;---- Create a GUI window for the on-screen keyboard overlay
 Gui, Font, s10 Bold, Verdana
 Gui, -Caption +E0x200 +ToolWindow
 TransColor = F1ECED
@@ -139,8 +136,7 @@ k_IsVisible = y
 WinGet, k_ID, ID, A   ; Get its window ID.
 WinGetPos,,, k_WindowWidth, k_WindowHeight, A
 
-;---- Position the keyboard at the bottom of the screen (taking into account
-; the position of the taskbar):
+;---- Position the keyboard at the bottom of the screen (taking into account the position of the taskbar):
 SysGet, k_WorkArea, MonitorWorkArea, %k_Monitor%
 
 ; Calculate window's X-position:
@@ -164,7 +160,7 @@ if b_showRight
 	k_WindowX -= %k_WindowWidth%
 }
 
-; Calculate window's Y-position:
+;---- Calculate window's Y-position:
 k_WindowY = %k_WorkAreaBottom%
 k_WindowY -= %k_WindowHeight%
 
@@ -173,51 +169,12 @@ WinSet, AlwaysOnTop, On, ahk_id %k_ID%
 WinSet, TransColor, %TransColor% 220, ahk_id %k_ID%
 
 
+;---- Watching for keys pressed every 0.1 seconds
 SetTimer, CheckKeysPressed, 100
 
 
 return ; End of auto-execute section.
 
-
-
-CheckKeysPressed:
-for index, element in a_keysToWatch ; Enumeration is the recommended approach in most cases.
-{
-    ; Using "Loop", indices must be consecutive numbers from 1 to the number
-    ; of elements in the array (or they must be calculated within the loop).
-    ; MsgBox % "Element number " . A_Index . " is " . Array[A_Index]
-
-    ; Using "for", both the index (or "key") and its associated value
-    ; are provided, and the index can be *any* value of your choosing.
-    ;MsgBox % "Element number " . index . " is " . element
-	
-	key_current_state := GetKeyState(element,"P") ;0(not pressed) or 1(pressed)
-	;MsgBox, key %element% has state %key_current_state%
-	nameit := "key_state_" . element ;preparing to save current state to previous state; e.g. key_state_A
-	
-	key_previous_state := % %nameit% ;key_previous_state := key_state_A; forced expression, see https://stackoverflow.com/questions/17498589/autohotkey-assign-a-text-expression-to-a-variable#17498698
-	;MsgBox % %nameit%
-	
-	if (key_current_state<>key_previous_state)
-	{
-		;MsgBox, key %element% has changed
-		%nameit% := key_current_state
-		
-		my_string := "~*" . element
-		
-		if (key_current_state=1)
-		{			
-			keyPressed(my_string)
-		}
-		else
-		{
-			keyReleased(my_string)
-		}
-	}
-	
-	
-}
-return
 
 k_ShowHide:
 if k_IsVisible = y
@@ -235,7 +192,35 @@ else
 return
 
 
-;---- When a key is pressed by the user, click the corresponding button on-screen:
+CheckKeysPressed:
+for index, element in a_keysToWatch ; Enumeration is the recommended approach in most cases.
+{	
+	key_current_state := GetKeyState(element,"P") ;0(not pressed) or 1(pressed)
+	nameit := "key_state_" . element ;preparing to save current state to previous state; e.g. key_state_A
+	
+	key_previous_state := % %nameit% ;key_previous_state := key_state_A; forced expression, see https://stackoverflow.com/questions/17498589/autohotkey-assign-a-text-expression-to-a-variable#17498698
+	
+	if (key_current_state<>key_previous_state)
+	{
+		;MsgBox, key %element% has changed
+		%nameit% := key_current_state
+		
+		my_string := "~*" . element
+		
+		if (key_current_state=1)
+		{			
+			keyPressed(my_string)
+		}
+		else
+		{
+			keyReleased(my_string)
+		}
+	}
+}
+return
+
+
+;---- When a key is pressed by the user, switch the corresponding button images:
 keyPressed(MyHotkey)
 {
 global k_SpacebarWidth2Set
@@ -258,7 +243,7 @@ global k_KeyHeight2Set
 	GuiControl,, pic_%k_ThisHotkey%, *w%k_KeyWidthAlternative% *h%k_KeyHeight2Set% %buttonInSecondColor%
 	Return
 }
-;---- When a key is released by the user, release the corresponding button on-screen:
+;---- When a key is released by the user, switch the corresponding button images:
 keyReleased(MyHotkey)
 {
 global k_SpacebarWidth2Set
