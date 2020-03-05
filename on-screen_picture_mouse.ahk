@@ -6,7 +6,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 
 ; On-Screen Picture Mouse Overlay -- by WellThatsAName
-; Version 2020-03-04 15-17
+; Version 2020-03-05 12-43
 ; This script creates a mouse at the bottom of your screen that shows
 ; the buttons pressed in real time.
 ; Simultanious button pressing supported.
@@ -17,7 +17,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 ; Changing this mouse width size will make the entire on-screen mouse get
 ; larger or smaller:
-k_MouseWidth = 100
+k_MouseWidth = 120
 ;Workaround: if replacement images are too small or too big, specify a zoom factor other than 1.0
 k_MouseZoom = 1.0
 
@@ -34,6 +34,8 @@ k_position_offset = 290
 
 ;predefined keys selection; see subfolders in keys/mouse; use number only; only 1-9
 k_mousepreset = 1
+;choose 1 or 2 as the main color
+k_mouseColor = 1
 
 ;a_mousebuttons_to_watch := ["LButton", "RButton", "MButton", "XButton1", "XButton2"]
 ;a_mousebuttons_to_watch := ["LButton", "RButton", "MButton", "XButton1", "XButton2"]
@@ -43,9 +45,6 @@ a_mousewheelbuttons := ["WheelDown", "WheelUp"] ; not yet inserted : "WheelLeft"
 ; milliseconds to highlight a scrolled mouse wheel button
 k_mousewheel_ms = 275
 
-;choose 1 or 2 as the main color
-k_mouseColor = 2
-
 k_tray_icon = images\icon_mouse.png
 
 ; Names for the tray menu items:
@@ -54,6 +53,9 @@ k_MenuItemShow = Show on-screen mouse overlay
 
 
 ;---- End of configuration section.  Don't change anything below this point
+
+
+k_bgColor := k_mouseColor = 1 ? "000000" : "FFFFFF"
 
 completemouse := "images\mouse\preset" . k_mousepreset . "\completemouse" . k_mouseColor . ".png"
 for index, mousebutton in a_mousebuttons_to_watch ; Enumeration is the recommended approach in most cases.
@@ -91,10 +93,9 @@ k_MouseSize = w%k_MouseWidth% h%k_MouseHeight%
 
 ;---- Create a GUI window for the mouse overlay
 Gui, Font, s10 Bold, Verdana
-Gui, -Caption +AlwaysOnTop +E0x200 +ToolWindow
+Gui, -Caption +AlwaysOnTop +ToolWindow
 Gui Margin, 0, 0
-TransColor = F1ECED
-Gui, Color, %TransColor%  ; This color will be made transparent later below.
+Gui, Color, %k_bgColor%  ; This color will be made transparent later below.
 
 ;---- Add an image for mouse and each button.
 Gui, Add, Picture, x0 y0 %k_MouseSize% +BackgroundTrans, %completemouse%
@@ -145,20 +146,20 @@ k_WindowY = %k_WorkAreaBottom%
 k_WindowY -= %k_WindowHeight%
 
 WinMove, A,, %k_WindowX%, %k_WindowY%
+
 WinSet, AlwaysOnTop, On, ahk_id %k_ID%
-WinSet, TransColor, %TransColor% 220, ahk_id %k_ID%
+WinSet, TransColor, %k_bgColor%, ahk_id %k_ID%
+
+;---- Watching for buttons pressed every 0.1 seconds
+SetTimer, CheckMousePressed, 100
 
 
-;---- Watching for buttons pressed every 0.15 seconds
-SetTimer, CheckMousePressed, 150
 
-
-
-WheelUp::
+~WheelUp::
 mouseWheelAction("WheelUp")
 return
 
-WheelDown::
+~WheelDown::
 mouseWheelAction("WheelDown")
 return
 
@@ -244,7 +245,7 @@ mousePressed(mousebutton)
 global k_MouseHeight
 global k_MouseWidth	
 	
-	GuiControl Show %k_MouseSize%, mb_%mousebutton%	
+	GuiControl Show %k_MouseSize%, mb_%mousebutton%
 	;ToolTip Mouse button pressed %mousebutton%	
 	Return
 }

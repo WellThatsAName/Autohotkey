@@ -6,7 +6,7 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 
 ; On-Screen Picture Keyboard Overlay -- by WellThatsAName, inspired by "On-Screen Keyboard"
-; Version 2020-03-04 15-17
+; Version 2020-03-05 12-43
 ; https://www.autohotkey.com/docs/scripts/KeyboardOnScreen.htm
 ; This script creates a (partial) keyboard at the bottom of your screen that shows
 ; the keys you are pressing in real time. I made it to help me to learn to
@@ -39,7 +39,7 @@ k_keyspreset = 1
 a_keysToWatch := ["1", "2", "3", "4", "5", "Q", "W", "E", "R", "A", "S", "D", "F", "C", "Space", "Tab", "Shift", "Ctrl"]
 
 ;choose 1 or 2 as the first color
-k_keyColorFirst = 2
+k_keyColorFirst = 1
 
 ; Names for the tray menu items
 k_MenuItemHide = Hide on-screen keyboard overlay
