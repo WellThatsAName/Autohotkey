@@ -1,79 +1,80 @@
-﻿#SingleInstance force  ; script is allowed to run only one at a time. Skips the dialog box, replaces the old instance automatically
+﻿/**
+; On-Screen Picture Mouse Overlay -- by WellThatsAName
+; Version 2020-03-06 09-20
+; This script creates a mouse overlay at the bottom of your screen.
+; The size and position of the mouse can be customized at the top of the script.
+; Also, you can double-click the tray icon to show or hide the overlay.
+*/
+; Keywords: Borderless overlay; Borderless window; Mouse Overlay; Input Overlay; On-Screen Overlay
+
+#SingleInstance force  ; script is allowed to run only one at a time. Skips the dialog box, replaces the old instance automatically
 #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
 ; #Warn  ; Enable warnings to assist with detecting common errors.
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
+#MaxHotkeysPerInterval 200
 
 
-; On-Screen Picture Mouse Overlay -- by WellThatsAName
-; Version 2020-03-05 12-43
-; This script creates a mouse at the bottom of your screen that shows
-; the buttons pressed in real time.
-; Simultanious button pressing supported.
-; The size and position of the mouse can be customized at the top of the script. Also, you
-; can double-click the tray icon to show or hide the overlay.
 
-;---- Configuration Section: Customize the size of the overlay
+/**
+ Configuration Section Start
+*/
 
-; Changing this mouse width size will make the entire on-screen mouse get
-; larger or smaller:
-k_MouseWidth = 120
-;Workaround: if replacement images are too small or too big, specify a zoom factor other than 1.0
-k_MouseZoom = 1.0
+k_mouseColor = 2 ;choose 1 or 2 as the main color
+k_mousepreset = 1 ;predefined keys selection; see subfolders in keys/mouse; use number only; only 1-9
+
+k_MouseWidth = 120 ; Changing this mouse width will make the entire on-screen overlay get larger or smaller
+k_MouseZoom = 1.0 ; ;Workaround: if replacement images are too small or too big, specify a zoom factor other than 1.0
+
+b_showLeft = 1
+b_showCenter = 0
+b_showRight = 0
+k_position_offset = 290
+
+k_tray_icon = images\icon_mouse.png
+
+; Names for the tray menu items
+k_MenuItemHide = Hide on-screen mouse overlay
+k_MenuItemShow = Show on-screen mouse overlay
 
 ; To have the overlay appear on a monitor other than the primary, specify
 ; a number such as 2 for the following variable.  Leave it blank to use
 ; the primary:
 k_Monitor =
 
-b_showLeft = 1
-b_showCenter = 0
-b_showRight = 0
 
-k_position_offset = 290
+/**
+ End of configuration section.
+ Don't change anything below!
+*/
 
-;predefined keys selection; see subfolders in keys/mouse; use number only; only 1-9
-k_mousepreset = 1
-;choose 1 or 2 as the main color
-k_mouseColor = 1
+a_mousebuttons_to_watch := ["LButton","RButton", "MButton" ] ; TODO: "XButton1", "XButton2"
+a_mousewheelbuttons := ["WheelDown", "WheelUp"] ; TODO: "WheelLeft", "WheelRight"
 
-;a_mousebuttons_to_watch := ["LButton", "RButton", "MButton", "XButton1", "XButton2"]
-;a_mousebuttons_to_watch := ["LButton", "RButton", "MButton", "XButton1", "XButton2"]
-a_mousebuttons_to_watch := ["LButton","RButton"]
-a_mousewheelbuttons := ["WheelDown", "WheelUp"] ; not yet inserted : "WheelLeft", "WheelRight"
-
-; milliseconds to highlight a scrolled mouse wheel button
-k_mousewheel_ms = 275
-
-k_tray_icon = images\icon_mouse.png
-
-; Names for the tray menu items:
-k_MenuItemHide = Hide on-screen mouse overlay
-k_MenuItemShow = Show on-screen mouse overlay
-
-
-;---- End of configuration section.  Don't change anything below this point
+k_mousewheelflash_ms = 275 ; milliseconds to highlight a scrolled mouse wheel button
 
 
 k_bgColor := k_mouseColor = 1 ? "000000" : "FFFFFF"
 
 completemouse := "images\mouse\preset" . k_mousepreset . "\completemouse" . k_mouseColor . ".png"
 for index, mousebutton in a_mousebuttons_to_watch ; Enumeration is the recommended approach in most cases.
-{	
+{
+	; set image path for each mouse button pressed
 	mb_%mousebutton%_colorpressed := "images\mouse\preset" . k_mousepreset . "\mousebutton" . mousebutton . k_mouseColor . ".png"
 	
 	;first state of each mouse button is "not pressed" a.k.a. 0
 	mouse_state_%mousebutton% := 0
 }
 for index, mousebutton in a_mousewheelbuttons ; Enumeration is the recommended approach in most cases.
-{	
+{
+	; set image path for each mouse wheel direction activated
 	mb_%mousebutton%_colorpressed := "images\mouse\preset" . k_mousepreset . "\mousebutton" . mousebutton . k_mouseColor . ".png"
 }
 
 k_WheelUpLastTime = 0
 k_WheelDownLastTime = 0
 
-;---- Alter the tray icon menu:
+;---- Alter the tray icon menu
 Menu, Tray, Add, %k_MenuItemHide%, k_ShowHide
 Menu, Tray, Add, &Exit, k_MenuExit
 Menu, Tray, Default, %k_MenuItemHide%
@@ -97,7 +98,7 @@ Gui, -Caption +AlwaysOnTop +ToolWindow
 Gui Margin, 0, 0
 Gui, Color, %k_bgColor%  ; This color will be made transparent later below.
 
-;---- Add an image for mouse and each button.
+;---- Add an image for mouse and each button
 Gui, Add, Picture, x0 y0 %k_MouseSize% +BackgroundTrans, %completemouse%
 Gui, Add, Picture, x0 y0 %k_MouseSize% +BackgroundTrans vmb_LButton hidden, %mb_LButton_colorpressed%
 Gui, Add, Picture, x0 y0 %k_MouseSize% +BackgroundTrans vmb_RButton hidden, %mb_RButton_colorpressed%
@@ -106,18 +107,17 @@ Gui, Add, Picture, x0 y0 %k_MouseSize% +BackgroundTrans vmb_WheelDown hidden, %m
 Gui, Add, Picture, x0 y0 %k_MouseSize% +BackgroundTrans vmb_WheelUp hidden, %mb_WheelUp_colorpressed%
 
 
-;---- Show the window:
+;---- Show the window
 Gui, Show
 k_IsVisible = y
 
 WinGet, k_ID, ID, A   ; Get its window ID.
 WinGetPos,,, k_WindowWidth, k_WindowHeight, A
 
-;---- Position the overlay  at the bottom of the screen (taking into account
-; the position of the taskbar):
+;---- Position the overlay  at the bottom of the screen (taking into account the position of the taskbar)
 SysGet, k_WorkArea, MonitorWorkArea, %k_Monitor%
 
-; Calculate window's X-position:
+; Calculate window's X-position
 if b_showLeft
 {
 	k_WindowX = 0
@@ -141,7 +141,7 @@ if b_showRight
 	k_WindowX += %k_position_offset%
 }
 
-; Calculate window's Y-position:
+; Calculate window's Y-position
 k_WindowY = %k_WorkAreaBottom%
 k_WindowY -= %k_WindowHeight%
 
@@ -150,11 +150,12 @@ WinMove, A,, %k_WindowX%, %k_WindowY%
 WinSet, AlwaysOnTop, On, ahk_id %k_ID%
 WinSet, TransColor, %k_bgColor%, ahk_id %k_ID%
 
+
 ;---- Watching for buttons pressed every 0.1 seconds
 SetTimer, CheckMousePressed, 100
 
 
-
+;---- Hotkeys for the mouse wheel directions
 ~WheelUp::
 mouseWheelAction("WheelUp")
 return
@@ -167,6 +168,7 @@ return
 return ;
 
 ;==== End of auto-execute section
+
 ;==== Functions
 
 k_ShowHide:
@@ -242,8 +244,7 @@ mouseWheelAction(mousebutton)
 ;---- When a mouse button is pressed by the user, click the corresponding button on-screen:
 mousePressed(mousebutton)
 {
-global k_MouseHeight
-global k_MouseWidth	
+global k_MouseSize
 	
 	GuiControl Show %k_MouseSize%, mb_%mousebutton%
 	;ToolTip Mouse button pressed %mousebutton%	
@@ -251,10 +252,7 @@ global k_MouseWidth
 }
 ;---- When a mouse button is released by the user, release the corresponding button on-screen:
 mouseReleased(mousebutton)
-{
-global k_MouseHeight
-global k_MouseWidth	
-	
+{	
 	GuiControl Hide, mb_%mousebutton%	
 	;ToolTip Mouse button released %mousebutton%	
 	Return
@@ -263,11 +261,11 @@ global k_MouseWidth
 ;---- 
 class MouseWheelScrolledCounter {
     __New() {
-		global k_mousewheel_ms
+		global k_mousewheelflash_ms
 	
 		this.mb := 0
 		this.elapsed_ms := 0 ; milliseconds since the wheel direction has been scrolled
-		this.mwms := k_mousewheel_ms
+		this.mwms := k_mousewheelflash_ms
 	
         ; checkToHide() has an implicit parameter "this" which is a reference to
         ; the object, so we need to create a function which encapsulates

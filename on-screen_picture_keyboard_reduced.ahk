@@ -1,3 +1,21 @@
+/**
+ On-Screen Picture Keyboard Overlay -- by WellThatsAName
+ Version 2020-03-06 09-20
+ Inspired by "On-Screen Keyboard" and OBS Input Overlay
+ https://www.autohotkey.com/docs/scripts/KeyboardOnScreen.htm
+ https://obsproject.com/forum/resources/input-overlay.552/
+ This script creates a (partial) keyboard overlay at the bottom of your screen that shows
+ the keys you are pressing in (almost) real time.
+ I made it to help me to learn to control the move master.
+ https://www.movemaster.biz/
+ Simultanious key typing supported as far as the keyboard allows.
+ The color and size of the on-screen keyboard can be customized at the top of the script.
+ Also, you can double-click the tray icon to show or hide the overlay.
+ Known limitations: Some keys can not be used, e.g. 'Ü', '+'
+*/
+; Keywords: Borderless overlay; Borderless window; Keyboard Overlay; Input Overlay; On-Screen Overlay
+
+
 #SingleInstance force  ; script is allowed to run only one at a time. Skips the dialog box, replaces the old instance automatically
 #NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
 ; #Warn  ; Enable warnings to assist with detecting common errors.
@@ -5,54 +23,44 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 
-; On-Screen Picture Keyboard Overlay -- by WellThatsAName, inspired by "On-Screen Keyboard"
-; Version 2020-03-05 12-43
-; https://www.autohotkey.com/docs/scripts/KeyboardOnScreen.htm
-; This script creates a (partial) keyboard at the bottom of your screen that shows
-; the keys you are pressing in real time. I made it to help me to learn to
-; control the move master.  https://www.movemaster.biz/
-; Simultanious key typing supported as far as the keyboard allows.
-; The size of the on-screen keyboard can be customized at the top of the script. Also, you
-; can double-click the tray icon to show or hide the overlay.
-; Known limitations: Some keys can not be used, e.g. 'Ü', '+'
+/**
+ Configuration Section Start
+*/
 
-
-;---- Configuration Section
-
+k_keyColorFirst = 2 ;choose 1 or 2 as the first color
+k_keyspreset = 1 ;predefined keys selection; see subfolders in images\keys; use number only; only 1-9
 
 k_KeyHeight = 40  ; Changing this key height size will make the entire on-screen keyboard get larger or smaller
 k_KeyZoom = 1.0  ; Workaround: if replacement keys are too small or too big, specify a zoom factor other than 1.0
-
-; To have the keyboard appear on a monitor other than the primary, specify a number such as 2 for the following variable. 
-; Leave it blank to use the primary
-k_Monitor =
 
 ; Position
 b_showLeft = 1
 b_showCenter = 0
 b_showRight = 0
 
-;predefined keys selection; see subfolders in images\keys; use number only; only 1-9
-k_keyspreset = 1
-
 ;keys to listen for
 a_keysToWatch := ["1", "2", "3", "4", "5", "Q", "W", "E", "R", "A", "S", "D", "F", "C", "Space", "Tab", "Shift", "Ctrl"]
 
-;choose 1 or 2 as the first color
-k_keyColorFirst = 1
 
 ; Names for the tray menu items
 k_MenuItemHide = Hide on-screen keyboard overlay
 k_MenuItemShow = Show on-screen keyboard overlay
 
+; To have the keyboard appear on a monitor other than the primary, specify a number such as 2 for the following variable. 
+; Leave it blank to use the primary
+k_Monitor =
 
-;---- End of configuration section.  Don't change anything below this point
 
+/**
+ End of configuration section.
+ Don't change anything below!
+*/
 
-
-k_tray_icon = images\icon_keyboard_left.png
 
 k_keyColorSecond := k_keyColorFirst = 1 ? 2 : 1
+k_bgColor := k_keyColorFirst = 1 ? "000000" : "FFFFFF"
+
+k_tray_icon = images\icon_keyboard_left.png
 
 for index, element in a_keysToWatch ; Enumeration is the recommended approach in most cases.
 {
@@ -65,7 +73,7 @@ for index, element in a_keysToWatch ; Enumeration is the recommended approach in
 }
 
 
-;---- Alter the tray icon menu:
+;---- Alter the tray icon menu
 Menu, Tray, Add, %k_MenuItemHide%, k_ShowHide
 Menu, Tray, Add, &Exit, k_MenuExit
 Menu, Tray, Default, %k_MenuItemHide%
@@ -87,56 +95,56 @@ k_SpacebarWidth = %k_KeyWidth%
 ;k_SpacebarWidth *= 4.2
 k_SpacebarWidth *= 3.0
 
-;use zoom workaround to prevent small button replacements
+;use zoom workaround to prevent small/big button replacements
 k_SpacebarWidth2Set := k_SpacebarWidth * k_KeyZoom
 k_KeyWidthHalf = %k_KeyWidth%
 k_KeyWidthHalf /= 2
 
 k_KeySize = w%k_KeyWidth% h%k_KeyHeight%
 k_KeySizeAlternative = *w%k_KeyWidth% *h%k_KeyHeight%
-k_Position = x+%k_KeyMargin% %k_KeySize%
-k_PositionAlternative = xm y+%k_KeyMargin% %k_KeySize%
+k_KeyPositionNext = x+%k_KeyMargin% %k_KeySize%
+k_KeyPositionNextRow = xm y+%k_KeyMargin% %k_KeySize%
 
 ;---- Create a GUI window for the on-screen keyboard overlay
 Gui, Font, s10 Bold, Verdana
-Gui, -Caption +E0x200 +ToolWindow
-TransColor = F1ECED
-Gui, Color, %TransColor%  ; This color will be made transparent later below.
+Gui, -Caption +AlwaysOnTop +ToolWindow
+Gui Margin, 0, 0
+Gui, Color, %k_bgColor%  ; This color will be made transparent later below.
 
 ;---- Add a button for each key. Position the first button with absolute
 ; coordinates so that all other buttons can be positioned relative to it:
-Gui, Add, Picture, %k_PositionAlternative% vpic_1, %key_1_colorFirst%
-Gui, Add, Picture, %k_Position% vpic_2, %key_2_colorFirst%
-Gui, Add, Picture, %k_Position% vpic_3, %key_3_colorFirst%
-Gui, Add, Picture, %k_Position% vpic_4, %key_4_colorFirst%
-Gui, Add, Picture, %k_Position% vpic_5, %key_5_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNextRow% +BackgroundTrans vpic_1, %key_1_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNext% +BackgroundTrans vpic_2, %key_2_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNext% +BackgroundTrans vpic_3, %key_3_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNext% +BackgroundTrans vpic_4, %key_4_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNext% +BackgroundTrans vpic_5, %key_5_colorFirst%
 
-Gui, Add, Picture, %k_PositionAlternative% vpic_Tab, %key_Tab_colorFirst%
-Gui, Add, Picture, %k_Position% vpic_q, %key_q_colorFirst%
-Gui, Add, Picture, %k_Position% vpic_w, %key_w_colorFirst%
-Gui, Add, Picture, %k_Position% vpic_e, %key_e_colorFirst%
-Gui, Add, Picture, %k_Position% vpic_r, %key_r_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNextRow% +BackgroundTrans vpic_Tab, %key_Tab_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNext% +BackgroundTrans vpic_q, %key_q_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNext% +BackgroundTrans vpic_w, %key_w_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNext% +BackgroundTrans vpic_e, %key_e_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNext% +BackgroundTrans vpic_r, %key_r_colorFirst%
 
-Gui, Add, Picture, %k_PositionAlternative% vpic_Shift, %key_Shift_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNextRow% +BackgroundTrans vpic_Shift, %key_Shift_colorFirst%
 
-Gui, Add, Picture, %k_Position% vpic_a, %key_a_colorFirst%
-Gui, Add, Picture, %k_Position% vpic_s, %key_s_colorFirst%
-Gui, Add, Picture, %k_Position% vpic_d, %key_d_colorFirst%
-Gui, Add, Picture, %k_Position% vpic_f, %key_f_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNext% +BackgroundTrans vpic_a, %key_a_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNext% +BackgroundTrans vpic_s, %key_s_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNext% +BackgroundTrans vpic_d, %key_d_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNext% +BackgroundTrans vpic_f, %key_f_colorFirst%
 
-Gui, Add, Picture, %k_PositionAlternative% vpic_Ctrl, %key_Ctrl_colorFirst%
-Gui, Add, Picture, %k_Position% vpic_c, %key_c_colorFirst%
-Gui, Add, Picture, x+%k_KeyMargin% w%k_SpacebarWidth% h%k_KeyHeight% vpic_Space, %key_Space_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNextRow% +BackgroundTrans vpic_Ctrl, %key_Ctrl_colorFirst%
+Gui, Add, Picture, %k_KeyPositionNext% +BackgroundTrans vpic_c, %key_c_colorFirst%
+Gui, Add, Picture, x+%k_KeyMargin% w%k_SpacebarWidth% h%k_KeyHeight% +BackgroundTrans vpic_Space, %key_Space_colorFirst%
 
 
-;---- Show the window:
+;---- Show the window
 Gui, Show
 k_IsVisible = y
 
 WinGet, k_ID, ID, A   ; Get its window ID.
 WinGetPos,,, k_WindowWidth, k_WindowHeight, A
 
-;---- Position the keyboard at the bottom of the screen (taking into account the position of the taskbar):
+;---- Position the keyboard at the bottom of the screen (taking into account the position of the taskbar)
 SysGet, k_WorkArea, MonitorWorkArea, %k_Monitor%
 
 ; Calculate window's X-position:
@@ -160,20 +168,25 @@ if b_showRight
 	k_WindowX -= %k_WindowWidth%
 }
 
-;---- Calculate window's Y-position:
+;---- Calculate window's Y-position
 k_WindowY = %k_WorkAreaBottom%
 k_WindowY -= %k_WindowHeight%
 
 WinMove, A,, %k_WindowX%, %k_WindowY%
+
 WinSet, AlwaysOnTop, On, ahk_id %k_ID%
-WinSet, TransColor, %TransColor% 220, ahk_id %k_ID%
+WinSet, TransColor, %k_bgColor%, ahk_id %k_ID%
 
 
 ;---- Watching for keys pressed every 0.1 seconds
 SetTimer, CheckKeysPressed, 100
 
-
 return ; End of auto-execute section.
+
+
+
+
+
 
 
 k_ShowHide:
@@ -220,7 +233,7 @@ for index, element in a_keysToWatch ; Enumeration is the recommended approach in
 return
 
 
-;---- When a key is pressed by the user, switch the corresponding button images:
+;---- When a key is pressed by the user, switch the corresponding button images
 keyPressed(MyHotkey)
 {
 global k_SpacebarWidth2Set
@@ -243,7 +256,8 @@ global k_KeyHeight2Set
 	GuiControl,, pic_%k_ThisHotkey%, *w%k_KeyWidthAlternative% *h%k_KeyHeight2Set% %buttonInSecondColor%
 	Return
 }
-;---- When a key is released by the user, switch the corresponding button images:
+
+;---- When a key is released by the user, switch the corresponding button images
 keyReleased(MyHotkey)
 {
 global k_SpacebarWidth2Set
